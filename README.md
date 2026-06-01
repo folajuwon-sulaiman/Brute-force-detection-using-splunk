@@ -1,5 +1,4 @@
-# Brute-force-detection-splunk
- brute force detection on splunk using self created log file
+# Brute Force Detection Using Splunk
 
 ## Overview
 This project demonstrates the detection of brute-force login attacks using Splunk. Custom authentication log files were created to simulate both legitimate and malicious login activity. The logs were ingested into Splunk, analyzed using SPL queries, visualized through dashboards, and monitored with automated alerts for suspicious behavior.
@@ -27,10 +26,12 @@ Custom log files were created to simulate:
 
 ### Sample Log Data
 
-2026-04-05 10:05:11 LOGIN FAILED user=admin ip=192.168.1.10
-2026-04-05 10:06:15 LOGIN SUCCESS user=john ip=192.168.1.15
-2026-04-05 10:07:18 FILE UPLOAD user=john file=project2.zip
-2026-04-05 10:08:28 FILE DOWNLOAD user=sarah file=report.pdf 
+```text
+2025-05-20 10:15:32 LOGIN_FAILED user=john ip=192.168.1.50
+2025-05-20 10:15:35 LOGIN_FAILED user=john ip=192.168.1.50
+2025-05-20 10:15:40 LOGIN_FAILED user=john ip=192.168.1.50
+2025-05-20 10:16:05 LOGIN_SUCCESS user=john ip=192.168.1.50
+```
 
 ## Data Ingestion
 The generated log files were uploaded and indexed in Splunk for analysis and monitoring.
@@ -39,20 +40,32 @@ The generated log files were uploaded and indexed in Splunk for analysis and mon
 
 ### Brute Force Detection Query
 
+```spl
 index=main "LOGIN FAILED"
 | rex "user=(?<user>\S+)"
 | rex "ip=(?<ip>\S+)"
 | stats count by user ip
 | where count >= 1
 | sort - count
+```
+
+### Successful Login After Multiple Failures
+
+```spl
+index=bruteforce
+| stats count(eval(action="LOGIN_FAILED")) as failed_attempts
+        count(eval(action="LOGIN_SUCCESS")) as successful_logins
+        by user, ip
+| where failed_attempts > 10 AND successful_logins > 0
+```
 
 ## Alert Configuration
 
 ### Alert Name
-Brute Force Login Detection
+**Brute Force Login Detection**
 
 ### Trigger Condition
-The alert is configured to trigger when the search returns more than 0 results. This indicates that at least one user/IP combination has met the brute-force detection threshold.
+More than 10 failed login attempts from the same IP address or against the same user account within a specified time window.
 
 ### Alert Actions
 - Generate a Splunk alert
@@ -88,8 +101,14 @@ The project successfully:
 - Dashboard Development
 - Cybersecurity Operations
 
+## Future Improvements
+- Integrate threat intelligence feeds
+- Add geolocation-based detection
+- Implement risk-based alerting
+- Automate incident response workflows
 
 ## Author
-SULAIMAN FOLAJUWON
+**folajuwon sulaiman**
 
 ## License
+This project was developed for educational and cybersecurity research purposes in a controlled environment.
